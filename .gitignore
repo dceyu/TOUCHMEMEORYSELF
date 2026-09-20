@@ -21,6 +21,7 @@ output/
 *.centopia-map
 *.centopia-settings
 media/
+exports/
 !projects/
 !projects/*.centopia-map
 .DS_Store
