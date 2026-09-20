@@ -1,0 +1,59 @@
+{
+  "name": "centopia-mapping-studio",
+  "version": "1.8.0",
+  "author": "CENTOPIA Studio",
+  "private": true,
+  "description": "CENTOPIA Mapping Studio — sensor driven media mapping for Windows",
+  "main": "dist-electron/electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"tsc -p tsconfig.electron.json --watch\" \"wait-on tcp:5173 dist-electron/main.js && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build": "tsc -p tsconfig.electron.json && vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "web": "node scripts/web-server.cjs",
+    "package:win": "npm run build && electron-builder --win nsis",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.8.5",
+    "@serialport/parser-readline": "^13.0.0",
+    "electron-log": "^5.4.3",
+    "serialport": "^13.0.0",
+    "three": "^0.179.1",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@types/three": "^0.179.0",
+    "@vitejs/plugin-react": "^5.0.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.0.0",
+    "electron": "^37.4.0",
+    "electron-builder": "^26.0.12",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3",
+    "vitest": "^3.2.4",
+    "wait-on": "^8.0.4"
+  },
+  "build": {
+    "appId": "studio.centopia.mapping",
+    "productName": "CENTOPIA Mapping Studio",
+    "directories": { "output": "dist-installer" },
+    "asar": true,
+    "extraResources": [{"from":"resources/arduino","to":"arduino","filter":["cli/**/*","data/**/*","!**/staging/**/*","!**/cache/**/*"]}],
+    "asarUnpack": ["**/*.node"],
+    "npmRebuild": false,
+    "files": ["dist/**/*", "dist-electron/**/*", "firmware/**/*", "package.json"],
+    "win": { "target": "nsis", "artifactName": "CENTOPIA-Mapping-Studio-${version}-Setup.${ext}" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "uninstallDisplayName": "CENTOPIA Mapping Studio"
+    }
+  }
+}

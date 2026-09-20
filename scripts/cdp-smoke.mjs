@@ -1,0 +1,10 @@
+const port=process.argv[2]??'9333';
+const mediaPath=process.argv[3];
+const targets=await fetch(`http://127.0.0.1:${port}/json/list`).then(response=>response.json());
+const target=targets.find(item=>item.type==='page'&&!item.url.includes('#/output'))??targets[0];
+if(!target)throw new Error('No renderer target');
+const socket=new WebSocket(target.webSocketDebuggerUrl);let nextId=1;
+await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});
+const evaluate=expression=>new Promise((resolve,reject)=>{const id=nextId++;const listener=event=>{const message=JSON.parse(event.data);if(message.id!==id)return;socket.removeEventListener('message',listener);if(message.error)reject(new Error(message.error.message));else resolve(message.result);};socket.addEventListener('message',listener);socket.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression,awaitPromise:true,returnByValue:true}}));});
+const expression=`(async()=>{const url=await window.centopia.media.toUrl(${JSON.stringify(mediaPath)});const result={url};try{const image=new Image();image.src=url;await image.decode();Object.assign(result,{width:image.naturalWidth,height:image.naturalHeight});}catch(error){result.imageError=String(error);}try{const response=await fetch(url);const blob=await response.blob();Object.assign(result,{status:response.status,bytes:blob.size});}catch(error){result.fetchError=String(error);}return result;})()`;
+const result=await evaluate(expression);console.log(JSON.stringify(result.result.value,null,2));socket.close();

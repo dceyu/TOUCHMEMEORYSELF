@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#070707" />
+  <title>CENTOPIA / 原始粒子网页版</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../folder.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark"></span><strong>CENTOPIA</strong><span class="edition">ORIGINAL WEB PARTICLE FIELD</span></div>
+      <div class="status"><span id="fps">60 FPS</span><span id="clock">00:00:00</span><i id="connectionDot"></i></div>
+    </header>
+
+    <section class="workspace">
+      <aside class="panel library-panel">
+        <div class="panel-title"><span>01</span><h2>图像数据库</h2></div>
+        <label class="dropzone" id="dropzone">
+          <input id="fileInput" type="file" accept="image/*" multiple />
+          <span class="plus">＋</span>
+          <strong>导入本地图像</strong>
+          <small>拖入 JPG / PNG / WEBP</small>
+        </label>
+        <button id="folderBtn" class="folder-btn"><span>⌁</span> 连接素材文件夹</button>
+        <input id="folderFallback" type="file" accept="image/*" webkitdirectory multiple hidden />
+        <div class="asset-meta"><span id="assetCount">0 项素材</span><button id="clearAssets" class="text-btn">清空</button></div>
+        <div id="assetGrid" class="asset-grid"></div>
+        <div class="panel-foot">文件夹采用按需读取；同时最多融合三张图像</div>
+      </aside>
+
+      <section class="stage-column">
+        <div class="stage-toolbar">
+          <div><span class="live-dot"></span>实时画布 <b id="resolution">—</b></div>
+          <div class="toolbar-actions">
+            <button id="autoBlendBtn" class="active-toggle">自动融合 · 开</button>
+            <button id="shuffleBtn">打散 / 重组</button>
+            <button id="fullscreenBtn">全屏投影 ↗</button>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <canvas id="canvas"></canvas>
+          <div id="emptyState" class="empty-state">
+            <span>IMAGE → PARTICLES → FLOW</span>
+            <h1>让图像成为<br />可感知的物质</h1>
+            <p>从左侧连接“街拍o”文件夹，或拖入图像</p>
+          </div>
+          <div class="stage-readout"><span id="particleReadout">0 PARTICLES</span><span id="modeReadout">FLOW FIELD</span></div>
+        </div>
+        <div class="sensor-strip">
+          <div class="sensor-head"><span>LIVE INPUT</span><b id="inputSource">SIMULATION</b></div>
+          <div class="sensor" data-key="proximity"><label>距离</label><div><i></i></div><output>0.50</output></div>
+          <div class="sensor" data-key="sound"><label>声音</label><div><i></i></div><output>0.35</output></div>
+          <div class="sensor" data-key="light"><label>光线</label><div><i></i></div><output>0.62</output></div>
+          <div class="sensor" data-key="touch"><label>触摸</label><div><i></i></div><output>0.00</output></div>
+        </div>
+      </section>
+
+      <aside class="panel controls-panel">
+        <div class="panel-title"><span>02</span><h2>视觉映射</h2></div>
+        <div class="preset-row">
+          <button class="preset active" data-preset="silk">流体织物</button>
+          <button class="preset" data-preset="dust">记忆尘埃</button>
+          <button class="preset" data-preset="storm">色彩风暴</button>
+        </div>
+        <div class="control-group">
+          <div class="group-label">粒子系统 <span>PARTICLES</span></div>
+          <label>密度 <output id="densityOut">18,000</output><input id="density" type="range" min="2000" max="32000" step="1000" value="18000" /></label>
+          <label>粒径 <output id="sizeOut">1.3</output><input id="size" type="range" min="0.4" max="4" step="0.1" value="1.3" /></label>
+          <label>图像凝聚 <output id="cohesionOut">72%</output><input id="cohesion" type="range" min="0" max="100" value="72" /></label>
+        </div>
+        <div class="control-group">
+          <div class="group-label">流场 <span>FLOW</span></div>
+          <label>流速 <output id="speedOut">0.8</output><input id="speed" type="range" min="0" max="3" step="0.1" value="0.8" /></label>
+          <label>涡旋 <output id="turbulenceOut">1.4</output><input id="turbulence" type="range" min="0" max="4" step="0.1" value="1.4" /></label>
+          <label>流场尺度 <output id="flowScaleOut">1.6</output><input id="flowScale" type="range" min="0.5" max="4" step="0.1" value="1.6" /></label>
+          <label>轨道力 <output id="orbitOut">0.35</output><input id="orbit" type="range" min="0" max="1.5" step="0.05" value="0.35" /></label>
+          <label>时间速率 <output id="tempoOut">0.45</output><input id="tempo" type="range" min="0.05" max="1.5" step="0.05" value="0.45" /></label>
+          <label>拖尾 <output id="trailOut">86%</output><input id="trail" type="range" min="0" max="96" value="86" /></label>
+        </div>
+        <div class="control-group mapping-group">
+          <div class="group-label">传感器路由 <span>INPUT → VISUAL</span></div>
+          <label>距离 <select data-map="proximity"><option value="cohesion">图像凝聚</option><option value="turbulence">涡旋</option><option value="speed">流速</option><option value="size">粒径</option></select></label>
+          <label>声音 <select data-map="sound"><option value="turbulence">涡旋</option><option value="speed">流速</option><option value="size">粒径</option><option value="cohesion">图像凝聚</option></select></label>
+          <label>光线 <select data-map="light"><option value="size">粒径</option><option value="speed">流速</option><option value="turbulence">涡旋</option><option value="cohesion">图像凝聚</option></select></label>
+          <label>触摸 <select data-map="touch"><option value="speed">流速</option><option value="cohesion">图像凝聚</option><option value="turbulence">涡旋</option><option value="size">粒径</option></select></label>
+        </div>
+        <div class="connection-box">
+          <div><strong>硬件连接</strong><span id="hardwareStatus">尚未连接</span></div>
+          <button id="serialBtn">连接 Arduino / USB</button>
+          <div class="ws-row"><input id="wsUrl" value="ws://localhost:8765" aria-label="WebSocket 地址" /><button id="wsBtn">连接 Pi</button></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <script src="../app.js"></script>
+</body>
+</html>

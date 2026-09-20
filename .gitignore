@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build and installer output
+dist/
+dist-electron/
+dist-installer/
+
+# Bundled local Arduino toolchain (generated/downloaded dependency)
+resources/arduino/
+
+# Test output and runtime caches
+test-output/
+output/
+*.log
+*.tmp
+.cache/
+
+# Local projects, media, and editor files
+*.centopia-map
+*.centopia-settings
+media/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Environment and credentials
+.env
+.env.*
+!.env.example

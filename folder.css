@@ -1,0 +1,12 @@
+.folder-btn {
+  width: 100%;
+  margin-top: 7px;
+  border-color: #64751e;
+  color: var(--acid);
+  background: #d8ff3e08;
+}
+.folder-btn span { font-size: 14px; margin-right: 4px; }
+.folder-btn.connected { background: var(--acid); color: #090909; border-color: var(--acid); }
+.active-toggle { color: var(--acid); border-color: #64751e; }
+.active-toggle.off { color: #777; border-color: #333; }
+.asset.loading::after { content: "···"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--acid); background: #111; }

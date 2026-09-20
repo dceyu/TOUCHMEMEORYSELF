@@ -1,0 +1,38 @@
+.node-editor { height: 100%; display: grid; grid-template-rows: 38px 1fr; }
+.node-toolbar { display: flex; align-items: center; gap: 18px; padding: 0 12px; border-bottom: 1px solid var(--line); background: #101310; font-size: 10px; }
+.node-toolbar label { color: var(--lime); }
+.node-toolbar span { color: var(--muted); }
+.studio-edge.disabled path { stroke: #414641 !important; stroke-dasharray: 5 5; }
+.react-flow__edge-text { font-size: 8px; fill: #aeb5ae; }
+.react-flow__edge-textbg { fill: #111411; }
+.preview.mapping-fullscreen { position: fixed; inset: 0; z-index: 30; border: 0; }
+.mapping-overlay.complex .mapping-grid { display: none; }
+.mapping-overlay svg.grid-lines { pointer-events: none; }
+.uv-handle.grid-point { width: 18px; height: 18px; font-size: 7px; background: #ffb36b; }
+.preview-quality { color: var(--lime); }
+.project-title { min-width: 0; }
+.app { grid-template-columns: minmax(0, 1fr); }
+.topbar { min-width: 0; gap: 14px; }
+.topbar nav { flex-shrink: 0; }
+.project-title { overflow: hidden; }
+.project-title strong { flex-shrink: 0; }
+.mode-arduino fieldset { min-width: 0; }
+.mode-arduino table th, .mode-arduino table td { padding: 5px 4px; text-align: left; }
+@media (max-width: 1400px) { .brand { min-width: 170px; } .brand span { display: none; } .topbar button { padding: 7px; } }
+.project-title strong { white-space: nowrap; }
+.project-title small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vertical-split,.horizontal-split{background:#171b17;position:relative;z-index:8}.vertical-split{cursor:col-resize}.horizontal-split{cursor:row-resize}.vertical-split:hover,.horizontal-split:hover{background:var(--lime)}
+.preview-mode-button{position:absolute;right:10px;top:10px;z-index:6;padding:5px 8px;font:9px monospace;color:var(--lime);background:#090b09cc}
+.source-editor{background:#0005}.source-frame{position:absolute;border:2px dashed #ffb36b;background:#ffb36b12;color:#fff;font:10px monospace;cursor:move}.source-frame i{position:absolute;right:-8px;bottom:-8px;width:16px;height:16px;border-radius:50%;background:#ffb36b;border:2px solid white;cursor:nwse-resize}.sequence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:5px}.sequence-grid>div{display:grid;grid-template-columns:1fr auto 65px 45px;align-items:center;gap:5px;padding:7px;border:1px solid var(--line);font-size:10px}.emotion-sequence{border:1px solid #52603e;margin:12px 0;padding:10px}
+.mode-arduino .workspace { grid-template-columns:var(--left-width,260px) 5px minmax(0,1fr); }
+.mode-arduino .right-split{display:none}
+.mode-arduino .inspector { display: none; }
+.mode-arduino .center { grid-template-rows:minmax(140px,var(--preview-height,30%)) 5px minmax(0,1fr); }
+.mode-arduino .output-controls { flex-wrap: wrap; }
+.mode-arduino input[type=number] { width: 86px; background: #151a14; border: 1px solid #3c4738; border-radius: 4px; color: #e7e9e4; padding: 6px; }
+.mode-arduino select { max-width: 100%; padding: 6px; }
+.mode-arduino label { display: inline-flex; align-items: center; gap: 6px; margin: 4px 6px 4px 0; font-size: 12px; }
+.mode-arduino button:disabled { opacity: .4; cursor: default; }
+.mode-arduino pre { background: #101310; padding: 14px; border: 1px solid #343d30; font-size: 12px; }
+.workspace{grid-template-columns:var(--left-width,260px) 5px minmax(0,1fr) 5px var(--right-width,270px)}
+.center{grid-template-rows:minmax(180px,var(--preview-height,42%)) 5px minmax(0,1fr)}
