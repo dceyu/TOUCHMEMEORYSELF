@@ -21,6 +21,8 @@ output/
 *.centopia-map
 *.centopia-settings
 media/
+!projects/
+!projects/*.centopia-map
 .DS_Store
 Thumbs.db
 .vscode/
