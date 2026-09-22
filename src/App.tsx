@@ -32,6 +32,7 @@ export function App(){
   const processors=useRef(Array.from({length:8},()=>new EnvelopeProcessor()));const machine=useRef(new GlobalStateMachine());const cueRuntime=useRef(new CueRuntime());const cueHigh=useRef(Array(8).fill(false));
   const binaryInputs=useRef(new BinaryInputs());
   const emotionSequence=useRef(new EmotionSequence());const [activeEmotion,setActiveEmotion]=useState<number>();const [emotionRemaining,setEmotionRemaining]=useState(0);
+  const lastUiUpdate=useRef(0);const lastGlobalState=useRef<'running'|'final-releasing'|'standby'>('standby');
   const lastFrameAt=useRef(0);const lastSeq=useRef(-1);
   const playlistIndex=useRef(0);const playlistStarted=useRef(0);const [playlistPlaying,setPlaylistPlaying]=useState(false);const playlistPlayingRef=useRef(false);
   const preview=useRef<HTMLCanvasElement>(null);const previewHost=useRef<HTMLDivElement>(null);const [mappingFullscreen,setMappingFullscreen]=useState(false);const engine=useRef<VisualEngine|undefined>(undefined);const lastTick=useRef(performanceNow());const effectValues=useRef(Object.fromEntries(effectIds.map(id=>[id,0])) as Record<EffectId,number>);
@@ -41,6 +42,7 @@ export function App(){
   useEffect(()=>{touchReady.current=false;binaryInputs.current.reset();window.centopia.arduino.configureTouch(project.arduino.wiring==='capacitive'?project.arduino.touch:null).catch(error=>setNotice(String(error)));},[project.arduino.wiring,project.arduino.touch]);
 
   useEffect(()=>{restartPreview(false);return()=>engine.current?.dispose();},[]);
+  useEffect(()=>{if(mode==='performance'){engine.current?.dispose();engine.current=undefined;return;}const frame=requestAnimationFrame(()=>{if(preview.current&&!engine.current)restartPreview(false);});return()=>cancelAnimationFrame(frame);},[mode]);
   useEffect(()=>{const fullscreen=()=>setMappingFullscreen(document.fullscreenElement===previewHost.current);document.addEventListener('fullscreenchange',fullscreen);return()=>document.removeEventListener('fullscreenchange',fullscreen);},[]);
   useEffect(()=>{window.centopia.serial.list().then(setPorts);window.centopia.output.listDisplays().then(setDisplays);const offFrame=window.centopia.serial.onFrame(frame=>ingest(frame));const offStatus=window.centopia.serial.onStatus(status=>{const active=Boolean(status.connected);connectedRef.current=active;setConnected(active);if(!active){channelsRef.current=[...emptyChannels];setChannels([...emptyChannels]);setFinalHigh(false);lastFrameAt.current=0;binaryInputs.current.reset();}setNotice(active?`${message('Arduino 已连接','Arduino connected')} · ${status.path}`:status.error??message('Arduino 已断开','Arduino disconnected'));});const offOutput=window.centopia.output.onStatus(status=>{setOutputOpen(status.open);if(!status.open)setTimeout(()=>restartPreview(true),120);});const offCommand=window.centopia.runtime.onCommand(command=>command==='final'?triggerFinal():resetFinal());return()=>{offFrame();offStatus();offOutput();offCommand();};},[]);
 
@@ -56,8 +58,7 @@ export function App(){
     if((rising[7]&&p.arduino.takeover&&p.arduino.channels[7].enabled)||finalHigh)triggerFinal();
     rising.slice(0,7).forEach((fire,index)=>{if(fire&&p.arduino.takeover&&p.arduino.channels[index].enabled&&!cueRuntime.current.isEnding){startEmotion(index,now);if(playlistPlayingRef.current&&p.playlist.mode==='triggered'&&p.playlist.advanceChannel===index)advanceTimeline();}});
     samples.forEach((sample,index)=>{cueHigh.current[index]=sample.triggered;});
-    const advance=emotionSequence.current.update(p.emotionSequence,now);if(advance==='ambient'){cueRuntime.current.deactivate(now);setActiveEmotion(undefined);}else if(typeof advance==='number'){cueRuntime.current.trigger(advance,now,p.cues[advance]);setActiveEmotion(advance);}setEmotionRemaining(emotionSequence.current.remaining(p.emotionSequence,now));
-    machine.current.update(false,p.cues[7].durationMs,now);setGlobalState(machine.current.state);
+    const advance=emotionSequence.current.update(p.emotionSequence,now);if(advance==='ambient'){cueRuntime.current.deactivate(now);setActiveEmotion(undefined);}else if(typeof advance==='number'){cueRuntime.current.trigger(advance,now,p.cues[advance]);setActiveEmotion(advance);}machine.current.update(false,p.cues[7].durationMs,now);if(machine.current.state!==lastGlobalState.current){lastGlobalState.current=machine.current.state;setGlobalState(machine.current.state);}if(now-lastUiUpdate.current>=250){lastUiUpdate.current=now;setEmotionRemaining(emotionSequence.current.remaining(p.emotionSequence,now));}
     for(const id of effectIds)effectValues.current[id]=0;
     const particleEvent=cueRuntime.current.resolve(p.cues,now);
     const snapshot={project:p,effectValues:{...effectValues.current},particleEvent,transition:{progress:1}};

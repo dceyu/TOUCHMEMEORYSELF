@@ -28,7 +28,7 @@ export class ProjectService {
     const touchDefaults=defaultArduino().touch;
     const project={...defaults,...loaded,arduino:{...defaultArduino(),...loaded.arduino,touch:{...touchDefaults,...loaded.arduino?.touch,measurement:{...touchDefaults.measurement,...loaded.arduino?.touch?.measurement}}},cues:loaded.cues??defaults.cues,ambient:{...defaults.ambient,...loaded.ambient},quantum:{...defaults.quantum,...loaded.quantum},ui:{...defaults.ui,...loadedUi,layout:{...defaults.ui.layout,...loadedUi?.layout}},emotionSequence:{...defaults.emotionSequence,...loaded.emotionSequence,steps:loaded.emotionSequence?.steps??defaults.emotionSequence.steps},routing:{...defaults.routing,...loaded.routing},playlist:{...defaults.playlist,...loadedPlaylist,items:loadedPlaylist?.items??defaults.playlist.items},mapping:{...defaults.mapping,...loadedMapping,sourceFrame:{...defaults.mapping.sourceFrame,...loadedMapping?.sourceFrame},grid:{...defaults.mapping.grid,...loadedMapping?.grid}},serial:{...defaults.serial,...loaded.serial}} as StudioProject;
     // Migrate former eight-effect projects to seven events and a fixed CH8 end.
-    project.cues=defaultCues().map((cue,i)=>({...cue,durationMs:loaded.cues?.[i]?.durationMs??cue.durationMs,intensity:Math.min(1,loaded.cues?.[i]?.intensity??1)}));
+    project.cues=defaultCues().map((cue,i)=>({...cue,durationMs:loaded.cues?.[i]?.durationMs??cue.durationMs,transitionMs:loaded.cues?.[i]?.transitionMs??cue.transitionMs,intensity:Math.min(1,loaded.cues?.[i]?.intensity??1)}));
     project.serial.finalSource=7;
     project.routing.enabled=false;
     if (project.formatVersion !== 1) throw new Error('不支持的项目文件版本');

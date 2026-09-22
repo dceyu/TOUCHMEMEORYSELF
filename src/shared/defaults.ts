@@ -4,14 +4,14 @@ export const defaultEnvelope = (): InputEnvelope => ({ threshold: 0.55, hysteres
 const effectIds: EffectId[] = ['disperse', 'blocks', 'warp', 'vortex', 'lightPath', 'tide'];
 export const defaultGrid = (size:3|5=3) => ({columns:size,rows:size,points:Array.from({length:size*size},(_,index)=>[(index%size)/(size-1),Math.floor(index/size)/(size-1)] as [number,number])});
 export const defaultCues = (): CueConfig[] => [
-  { kind:'doubt',label:'怀疑',durationMs:2800,intensity:1 },
-  { kind:'explore',label:'探索',durationMs:5200,intensity:1 },
-  { kind:'desire',label:'欲望',durationMs:8500,intensity:1 },
-  { kind:'confidence',label:'自信',durationMs:5200,intensity:1 },
-  { kind:'conflict',label:'冲突',durationMs:2600,intensity:1 },
-  { kind:'void',label:'虚无',durationMs:6500,intensity:1 },
-  { kind:'acceptance',label:'接纳',durationMs:7500,intensity:1 },
-  { kind:'finalDissolve',label:'结束 · 光芒消散',durationMs:5000,intensity:1 }
+  { kind:'doubt',label:'怀疑',durationMs:2800,transitionMs:2000,intensity:1 },
+  { kind:'explore',label:'探索',durationMs:5200,transitionMs:2000,intensity:1 },
+  { kind:'desire',label:'欲望',durationMs:8500,transitionMs:2400,intensity:1 },
+  { kind:'confidence',label:'自信',durationMs:5200,transitionMs:2000,intensity:1 },
+  { kind:'conflict',label:'冲突',durationMs:2600,transitionMs:1600,intensity:1 },
+  { kind:'void',label:'虚无',durationMs:6500,transitionMs:2200,intensity:1 },
+  { kind:'acceptance',label:'接纳',durationMs:7500,transitionMs:2200,intensity:1 },
+  { kind:'finalDissolve',label:'结束 · 光芒消散',durationMs:5000,transitionMs:2000,intensity:1 }
 ];
 export function createDefaultProject(): StudioProject {
   const cues=defaultCues();
@@ -26,7 +26,7 @@ export function createDefaultProject(): StudioProject {
     cues,
     ambient: { enabled:true,amplitude:.32,speed:.34,randomness:.18,force:.22,direction:0,movementRange:.65,trail:.86 },
     arduino: defaultArduino(),
-    quantum: { pointSize:1.15 },
+    quantum: { pointSize:1.15,brightness:1,edgeFeather:.2 },
     ui: { language:'zh',layout:{leftWidth:260,rightWidth:270,previewHeight:42} },
     emotionSequence:{autoPlay:true,globalDelayMs:15000,steps:Array.from({length:7},(_,i)=>({useGlobal:true,delayMs:15000,next:Math.min(6,i+1)}))},
     routing: { enabled:false },

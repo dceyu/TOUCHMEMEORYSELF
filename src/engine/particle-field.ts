@@ -39,6 +39,8 @@ const particleVertexShader = /* glsl */`
   uniform float uAmbientDirection;
   uniform float uAmbientRange;
   uniform float uPointSize;
+  uniform float uBaseBrightness;
+  uniform float uEventEdgeFeather;
   uniform float uEventRadius;
   uniform float uEventSpread;
   uniform float uEventBrightness;
@@ -74,7 +76,10 @@ const particleVertexShader = /* glsl */`
     float luma=dot(source.rgb,vec3(.2126,.7152,.0722));
 
     // Every particle is managed by the same coherent ambient force field.
-    vec2 p=posUv-.5;p.x*=screenAspect;
+    vec2 originalP=posUv-.5;originalP.x*=screenAspect;vec2 p=originalP;
+    float edgeDistance=min(min(aUv.x,1.0-aUv.x),min(aUv.y,1.0-aUv.y));
+    float eventWeight=smoothstep(0.0,max(.02,uEventEdgeFeather),edgeDistance);
+    float weightedAmbientInfluence=mix(1.0,uEventAmbientInfluence,eventWeight);
     float ambientTime=uTime*max(.001,uAmbientSpeed);
     float globalNoise=noise(vec2(ambientTime*.12,4.17));
     float randomAngle=(globalNoise-.5)*6.283185*uAmbientRandomness;
@@ -82,8 +87,8 @@ const particleVertexShader = /* glsl */`
     vec2 forceDirection=vec2(cos(uAmbientDirection+randomAngle),sin(uAmbientDirection+randomAngle));
     float phase=ambientTime;
     vec2 ambientField=vec2(sin(p.y*7.0+phase)+.45*sin((p.x+p.y)*12.0-phase*.63),-cos(p.x*6.0-phase)-.45*cos((p.y-p.x)*11.0+phase*.51));
-    p+=ambientField*.075*uAmbientAmplitude*uAmbientRange*uAmbientEnabled*uEventAmbientInfluence;
-    p+=forceDirection*sin(ambientTime*.72)*.22*uAmbientForce*randomMagnitude*uAmbientRange*uAmbientEnabled*uEventAmbientInfluence;
+    p+=ambientField*.075*uAmbientAmplitude*uAmbientRange*uAmbientEnabled*weightedAmbientInfluence;
+    p+=forceDirection*sin(ambientTime*.72)*.22*uAmbientForce*randomMagnitude*uAmbientRange*uAmbientEnabled*weightedAmbientInfluence;
     vec2 field=vec2(sin(p.y*19.0+phase)+.55*sin((p.x+p.y)*31.0-phase*.7),-cos(p.x*17.0-phase)-.55*cos((p.y-p.x)*29.0+phase*.6));
     field*=.018*uWarp*(.35+luma);
     p+=field;
@@ -92,18 +97,18 @@ const particleVertexShader = /* glsl */`
     float vortexAngle=uVortex*(1.15-r)*(.55+.45*sin(uTime*.31+aSeed*2.0));
     p=mat2(cos(vortexAngle),-sin(vortexAngle),sin(vortexAngle),cos(vortexAngle))*p;
     float eventR=max(.001,length(p));vec2 eventDir=p/eventR;
-    p+=eventDir*uEventRadialForce*(.12+.12*(1.0-clamp(eventR,0.0,1.0)));
-    float eventSpin=uEventSwirl*(1.15-clamp(eventR,0.0,1.0))*(.7+.3*sin(uTime*.45));p=mat2(cos(eventSpin),-sin(eventSpin),sin(eventSpin),cos(eventSpin))*p;
-    float holePush=smoothstep(0.0,max(.001,uEventCenterHole),uEventCenterHole-eventR)*uEventCenterHole;p+=eventDir*holePush;
+    p+=eventDir*uEventRadialForce*(.12+.12*(1.0-clamp(eventR,0.0,1.0)))*eventWeight;
+    float eventSpin=uEventSwirl*(1.15-clamp(eventR,0.0,1.0))*(.7+.3*sin(uTime*.45))*eventWeight;p=mat2(cos(eventSpin),-sin(eventSpin),sin(eventSpin),cos(eventSpin))*p;
+    float holePush=smoothstep(0.0,max(.001,uEventCenterHole),uEventCenterHole-eventR)*uEventCenterHole;p+=eventDir*holePush*eventWeight;
     vec2 eventNoise=vec2(noise(aUv*17.0+uTime*.7+aSeed),noise(aUv.yx*19.0-uTime*.61+aSeed))-.5;
-    p+=eventNoise*.28*max(0.0,uEventRandomForce);p=mix(p,posUv-.5,max(0.0,uEventOriginReturn)*.88);p.y-=uEventVerticalFall*(.18+.42*aSeed);
+    p+=eventNoise*.28*max(0.0,uEventRandomForce)*eventWeight;p=mix(p,originalP,max(0.0,uEventOriginReturn)*.88*eventWeight);p.y-=uEventVerticalFall*(.18+.42*aSeed)*eventWeight;
     p.y+=sin(p.x*16.0-uTime*.8+aSeed*3.0)*.045*uTide;
     p.x+=sin(p.y*21.0+uTime*.55)*.018*uTide;
 
     vec2 burst=vec2(hash21(aUv*997.0+aSeed),hash21(aUv.yx*733.0-aSeed))-.5;
     float bands=.35+.65*sin(aUv.y*85.0+aSeed*4.0+uTime*.25);
     p+=burst*uDisperse*(.12+.22*bands);
-    p=p*uEventRadius+burst*uEventSpread;
+    p=p*mix(1.0,uEventRadius,eventWeight)+burst*uEventSpread*eventWeight;
     p.x/=screenAspect;posUv=p+.5;
     float blockGrid=mix(96.0,18.0,uBlocks);
     vec2 blockUv=(floor(posUv*blockGrid)+.5)/blockGrid;
@@ -118,7 +123,8 @@ const particleVertexShader = /* glsl */`
     // Media remains visible as the ambient appearance. Cue values only deform
     // the field. With no media loaded, the same moving point grid stays black.
     float spatialGlow=uEventGlow*(.4+.6*(1.0-clamp(length(p)*1.3,0.0,1.0)));float flicker=1.0+uEventFlicker*(.38*sin(uTime*5.2)+.22*sin(uTime*11.7+aSeed*9.0));
-    vColor=mix(vec3(0.0),source.rgb,uHasMedia)*uBrightness*uEventBrightness*flicker*(1.0+spatialGlow)*(1.0-uBlackout);
+    float combinedBrightness=max(0.0,uBaseBrightness+(uEventBrightness-1.0));
+    vColor=mix(vec3(0.0),source.rgb,uHasMedia)*uBrightness*combinedBrightness*flicker*(1.0+spatialGlow)*(1.0-uBlackout);
     float retained=1.0-smoothstep(uEventVisibility-.015,uEventVisibility+.015,aSeed*.97+.015);
     if(uEventVisibility>=.999)retained=1.0;
     if(uEventVisibility<=.001)retained=0.0;
@@ -150,6 +156,7 @@ export class ParticleField {
   readonly points: THREE.Points;
   private geometry = new THREE.BufferGeometry();
   private material: THREE.ShaderMaterial;
+  private gridSignature='';
 
   constructor(columns = 640, rows = 360) {
     const count=columns*rows;
@@ -166,13 +173,13 @@ export class ParticleField {
       uTopLeft:{value:new THREE.Vector2(0,1)},uTopRight:{value:new THREE.Vector2(1,1)},uBottomRight:{value:new THREE.Vector2(1,0)},uBottomLeft:{value:new THREE.Vector2(0,0)},
       uGridEnabled:{value:0},uGridSize:{value:new THREE.Vector2(3,3)},uGridPoints:{value:Array.from({length:25},()=>new THREE.Vector2())},
       uAmbientEnabled:{value:1},uAmbientAmplitude:{value:.32},uAmbientSpeed:{value:.34},uAmbientRandomness:{value:.18},uAmbientForce:{value:.22},uAmbientDirection:{value:0},uAmbientRange:{value:.65},
-      uPointSize:{value:1.15},uSourceFrame:{value:new THREE.Vector4(0,0,1,1)},uEventRadius:{value:1},uEventSpread:{value:0},uEventBrightness:{value:1},uEventOpacity:{value:1},uEventVisibility:{value:1},uEventRadialForce:{value:0},uEventSwirl:{value:0},uEventCenterHole:{value:0},uEventRandomForce:{value:0},uEventVerticalFall:{value:0},uEventGlow:{value:0},uEventFlicker:{value:0},uEventOriginReturn:{value:0},uEventAmbientInfluence:{value:1},
+      uPointSize:{value:1.15},uBaseBrightness:{value:1},uEventEdgeFeather:{value:.2},uSourceFrame:{value:new THREE.Vector4(0,0,1,1)},uEventRadius:{value:1},uEventSpread:{value:0},uEventBrightness:{value:1},uEventOpacity:{value:1},uEventVisibility:{value:1},uEventRadialForce:{value:0},uEventSwirl:{value:0},uEventCenterHole:{value:0},uEventRandomForce:{value:0},uEventVerticalFall:{value:0},uEventGlow:{value:0},uEventFlicker:{value:0},uEventOriginReturn:{value:0},uEventAmbientInfluence:{value:1},
       ...Object.fromEntries(['Disperse','Blocks','Warp','Vortex','LightPath','Tide'].map(id=>[`u${id}`,{value:0}]))
     }});
     this.points=new THREE.Points(this.geometry,this.material);this.points.frustumCulled=false;this.points.renderOrder=2;
   }
 
-  apply(snapshot:OutputSnapshot,hasMedia:boolean){const e=snapshot.particleEvent!;for(const key of Object.keys(e) as (keyof typeof e)[])this.material.uniforms[`uEvent${key[0].toUpperCase()}${key.slice(1)}`].value=e[key];const p=snapshot.project,a=p.ambient,m=p.mapping,q=p.quantum;this.material.uniforms.uSourceFrame.value.set(m.sourceFrame.x,m.sourceFrame.y,m.sourceFrame.width,m.sourceFrame.height);this.material.uniforms.uHasMedia.value=hasMedia?1:0;this.material.uniforms.uBrightness.value=m.brightness;this.material.uniforms.uBlackout.value=m.blackout?1:0;this.material.uniforms.uFit.value=['fill','fit','stretch'].indexOf(m.fit);this.material.uniforms.uRotation.value=m.rotation/90;this.material.uniforms.uMirror.value.set(m.mirrorX?1:0,m.mirrorY?1:0);this.material.uniforms.uAmbientEnabled.value=a.enabled?1:0;this.material.uniforms.uAmbientAmplitude.value=a.amplitude;this.material.uniforms.uAmbientSpeed.value=a.speed;this.material.uniforms.uAmbientRandomness.value=a.randomness;this.material.uniforms.uAmbientForce.value=a.force;this.material.uniforms.uAmbientDirection.value=a.direction*Math.PI/180;this.material.uniforms.uAmbientRange.value=a.movementRange;this.material.uniforms.uPointSize.value=q.pointSize;this.setQuad(m.quad);this.material.uniforms.uGridEnabled.value=m.controlMode==='grid'?1:0;this.material.uniforms.uGridSize.value.set(m.grid.columns,m.grid.rows);this.material.uniforms.uGridPoints.value=createGridUniformPoints(m.grid.points);for(const [id,value]of Object.entries(snapshot.effectValues)as[EffectId,number][]){const applied=p.effects[id].enabled?value*p.effects[id].intensity:0;this.material.uniforms[`u${id[0].toUpperCase()}${id.slice(1)}`].value=applied;}}
+  apply(snapshot:OutputSnapshot,hasMedia:boolean){const e=snapshot.particleEvent!;for(const key of Object.keys(e) as (keyof typeof e)[])this.material.uniforms[`uEvent${key[0].toUpperCase()}${key.slice(1)}`].value=e[key];const p=snapshot.project,a=p.ambient,m=p.mapping,q=p.quantum;this.material.uniforms.uSourceFrame.value.set(m.sourceFrame.x,m.sourceFrame.y,m.sourceFrame.width,m.sourceFrame.height);this.material.uniforms.uHasMedia.value=hasMedia?1:0;this.material.uniforms.uBrightness.value=m.brightness;this.material.uniforms.uBlackout.value=m.blackout?1:0;this.material.uniforms.uFit.value=['fill','fit','stretch'].indexOf(m.fit);this.material.uniforms.uRotation.value=m.rotation/90;this.material.uniforms.uMirror.value.set(m.mirrorX?1:0,m.mirrorY?1:0);this.material.uniforms.uAmbientEnabled.value=a.enabled?1:0;this.material.uniforms.uAmbientAmplitude.value=a.amplitude;this.material.uniforms.uAmbientSpeed.value=a.speed;this.material.uniforms.uAmbientRandomness.value=a.randomness;this.material.uniforms.uAmbientForce.value=a.force;this.material.uniforms.uAmbientDirection.value=a.direction*Math.PI/180;this.material.uniforms.uAmbientRange.value=a.movementRange;this.material.uniforms.uPointSize.value=q.pointSize;this.material.uniforms.uBaseBrightness.value=q.brightness;this.material.uniforms.uEventEdgeFeather.value=q.edgeFeather;this.setQuad(m.quad);this.material.uniforms.uGridEnabled.value=m.controlMode==='grid'?1:0;const signature=`${m.grid.columns}:${m.grid.rows}:${m.grid.points.flat().join(',')}`;if(signature!==this.gridSignature){this.gridSignature=signature;this.material.uniforms.uGridSize.value.set(m.grid.columns,m.grid.rows);this.material.uniforms.uGridPoints.value=createGridUniformPoints(m.grid.points);}for(const [id,value]of Object.entries(snapshot.effectValues)as[EffectId,number][]){const applied=p.effects[id].enabled?value*p.effects[id].intensity:0;this.material.uniforms[`u${id[0].toUpperCase()}${id.slice(1)}`].value=applied;}}
   update(now:number,media:MediaManager,width:number,height:number){this.material.uniforms.uTime.value=now*.001;this.material.uniforms.uMediaA.value=media.textureA;this.material.uniforms.uMediaB.value=media.textureB;this.material.uniforms.uTransition.value=media.transition;this.material.uniforms.uMediaSize.value.set(...media.size);this.material.uniforms.uResolution.value.set(width,height);}
   dispose(){this.geometry.dispose();this.material.dispose();}
   private setQuad(q:MappingQuad){this.material.uniforms.uTopLeft.value.set(q.topLeft[0],1-q.topLeft[1]);this.material.uniforms.uTopRight.value.set(q.topRight[0],1-q.topRight[1]);this.material.uniforms.uBottomRight.value.set(q.bottomRight[0],1-q.bottomRight[1]);this.material.uniforms.uBottomLeft.value.set(q.bottomLeft[0],1-q.bottomLeft[1]);}
